@@ -36,12 +36,15 @@ let update x v s = fun y -> if x = y then v else s y
 let s = update "x" 1 @@ update "y" 2 @@ update "z" 3 @@ update "t" 4 empty
 
 (* Some testing; comment this definition out when submitting the solution. *)
+(*
 let _ =
   List.iter
     (fun x ->
        try  Printf.printf "%s=%d\n" x @@ s x
        with Failure s -> Printf.printf "%s\n" s
     ) ["x"; "a"; "y"; "z"; "t"; "b"]
+*)
+
 
 (* Expression evaluator
 
@@ -50,5 +53,31 @@ let _ =
    Takes a state and an expression, and returns the value of the expression in 
    the given state.
 *)
-let eval = failwith "Not implemented yet"
+
+let fromBool b = if b then 1 else 0
+
+let toBool b = b != 0 
+
+let binFromBool f a b = fromBool (f a b)
+
+let strToFunc op = match op with 
+ | "+"  -> ( + )
+ | "-"  -> ( - )
+ | "*"  -> ( * )
+ | "/"  -> ( / )
+ | "%"  -> (mod)
+ | "<"  -> binFromBool (< ) 
+ | "<=" -> binFromBool (<=)
+ | ">"  -> binFromBool (> )
+ | ">=" -> binFromBool (>=)
+ | "==" -> binFromBool (==) 
+ | "!=" -> binFromBool (!=) 
+ | "&&" -> fun x y -> binFromBool (&&) (toBool x) (toBool y) 
+ | "!!" -> fun x y -> binFromBool (||) (toBool x) (toBool y)
+ | _    -> raise Not_found
+
+let rec eval s e =  match e with
+   | Const a -> a
+   | Var x -> s x
+   | Binop (op, x, y) -> (strToFunc op) (eval s x) (eval s y)
                     
