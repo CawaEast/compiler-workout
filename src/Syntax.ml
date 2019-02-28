@@ -41,7 +41,32 @@ module Expr =
        Takes a state and an expression, and returns the value of the expression in 
        the given state.
     *)
-    let eval _ = failwith "Not implemented yet"
+    let fromBool b = if b then 1 else 0
+
+    let toBool b = b != 0 
+
+    let binFromBool f a b = fromBool (f a b)
+
+    let strToFunc op = match op with 
+      | "+"  -> ( + )
+      | "-"  -> ( - )
+      | "*"  -> ( * )
+      | "/"  -> ( / )
+      | "%"  -> (mod)
+      | "<"  -> binFromBool (< ) 
+      | "<=" -> binFromBool (<=)
+      | ">"  -> binFromBool (> )
+      | ">=" -> binFromBool (>=)
+      | "==" -> binFromBool (==) 
+      | "!=" -> binFromBool (!=) 
+      | "&&" -> fun x y -> binFromBool (&&) (toBool x) (toBool y) 
+      | "!!" -> fun x y -> binFromBool (||) (toBool x) (toBool y)
+      | _    -> raise Not_found
+
+    let rec eval s e =  match e with
+      | Const a -> a
+      | Var x -> s x
+      | Binop (op, x, y) -> (strToFunc op) (eval s x) (eval s y)
 
   end
                     
@@ -65,7 +90,12 @@ module Stmt =
 
        Takes a configuration and a statement, and returns another configuration
     *)
-    let eval _ = failwith "Not implemented yet"
+    let rec eval config statement = match statement, config with
+      | Read n,        (state, v::inp, out) -> Expr.update n v state, inp, out
+      | Write expr,    (state, inp,    out) -> state, inp, out @ [(Expr.eval state expr)]
+      | Assign (n, e), (state, inp,    out) -> Expr.update n (Expr.eval state e) state, inp, out
+      | Seq (s1, s2),  config               -> eval (eval config s1) s2
+      | _ -> failwith "Unknown operation"
                                                          
   end
 
